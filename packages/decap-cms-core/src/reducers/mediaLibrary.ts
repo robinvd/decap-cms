@@ -47,6 +47,7 @@ const defaultState: {
   field?: EntryField;
   value?: string | string[];
   replaceIndex?: number | boolean;
+  allowMultiple?: boolean;
 } = {
   isVisible: false,
   showMediaButton: true,
@@ -64,8 +65,16 @@ function mediaLibrary(state = Map(defaultState), action: MediaLibraryAction) {
       });
 
     case MEDIA_LIBRARY_OPEN: {
-      const { controlID, forImage, privateUpload, config, field, value, replaceIndex } =
-        action.payload;
+      const {
+        controlID,
+        forImage,
+        privateUpload,
+        config,
+        field,
+        value,
+        replaceIndex,
+        allowMultiple,
+      } = action.payload;
       const libConfig = config || Map();
       const privateUploadChanged = state.get('privateUpload') !== privateUpload;
       if (privateUploadChanged) {
@@ -81,6 +90,7 @@ function mediaLibrary(state = Map(defaultState), action: MediaLibraryAction) {
           field,
           value,
           replaceIndex,
+          allowMultiple,
         });
       }
       return state.withMutations(map => {
@@ -93,6 +103,7 @@ function mediaLibrary(state = Map(defaultState), action: MediaLibraryAction) {
         map.set('field', field ?? '');
         map.set('value', value == '' && libConfig.get('multiple') ? [] : value ?? '');
         map.set('replaceIndex', replaceIndex ?? false);
+        map.set('allowMultiple', allowMultiple ?? false);
       });
     }
 

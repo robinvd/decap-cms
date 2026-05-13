@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export function FileUploadButton({ label, imagesOnly, onChange, disabled, className }) {
+export function FileUploadButton({ label, imagesOnly, onChange, disabled, className, multiple }) {
   return (
     <label tabIndex={'0'} className={`nc-fileUploadButton ${className || ''}`}>
       <span>{label}</span>
@@ -10,6 +10,7 @@ export function FileUploadButton({ label, imagesOnly, onChange, disabled, classN
         accept={imagesOnly ? 'image/*' : '*/*'}
         onChange={onChange}
         disabled={disabled}
+        multiple={multiple}
       />
     </label>
   );
@@ -21,4 +22,5 @@ FileUploadButton.propTypes = {
   imagesOnly: PropTypes.bool,
   onChange: PropTypes.func.isRequired,
   disabled: PropTypes.bool,
+  multiple: PropTypes.bool,
 };

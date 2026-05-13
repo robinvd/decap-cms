@@ -74,8 +74,10 @@ function MediaLibraryModal({
   hasNextPage,
   isPaginating,
   privateUpload,
+  allowMultiple,
   query,
   selectedFile,
+  selectedFiles = [],
   handleFilter,
   handleQuery,
   toTableData,
@@ -108,7 +110,8 @@ function MediaLibraryModal({
     (!hasFilteredFiles && t('mediaLibrary.mediaLibraryModal.noImagesFound')) ||
     (!hasSearchResults && t('mediaLibrary.mediaLibraryModal.noResults'));
 
-  const hasSelection = hasMedia && !isEmpty(selectedFile);
+  const hasSelection =
+    hasMedia && (allowMultiple ? selectedFiles.length > 0 : !isEmpty(selectedFile));
 
   return (
     <StyledModal isOpen={isVisible} onClose={handleClose} isPrivate={privateUpload}>
@@ -117,6 +120,7 @@ function MediaLibraryModal({
         onClose={handleClose}
         privateUpload={privateUpload}
         forImage={forImage}
+        allowMultiple={allowMultiple}
         onDownload={handleDownload}
         onUpload={handlePersist}
         query={query}
@@ -137,7 +141,11 @@ function MediaLibraryModal({
       <MediaLibraryCardGrid
         setScrollContainerRef={setScrollContainerRef}
         mediaItems={tableData}
-        isSelectedFile={file => selectedFile.key === file.key}
+        isSelectedFile={file =>
+          allowMultiple
+            ? selectedFiles.some(selectedFile => selectedFile.key === file.key)
+            : selectedFile.key === file.key
+        }
         onAssetClick={handleAssetClick}
         canLoadMore={hasNextPage}
         onLoadMore={handleLoadMore}
@@ -178,8 +186,10 @@ MediaLibraryModal.propTypes = {
   hasNextPage: PropTypes.bool,
   isPaginating: PropTypes.bool,
   privateUpload: PropTypes.bool,
+  allowMultiple: PropTypes.bool,
   query: PropTypes.string,
   selectedFile: PropTypes.oneOfType([PropTypes.shape(fileShape), PropTypes.shape({})]),
+  selectedFiles: PropTypes.arrayOf(PropTypes.shape(fileShape)),
   handleFilter: PropTypes.func.isRequired,
   handleQuery: PropTypes.func.isRequired,
   toTableData: PropTypes.func.isRequired,

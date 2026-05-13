@@ -83,7 +83,7 @@ export function openMediaLibrary(
     controlID?: string;
     forImage?: boolean;
     privateUpload?: boolean;
-    value?: string;
+    value?: string | string[];
     allowMultiple?: boolean;
     config?: Map<string, unknown>;
     field?: EntryField;
@@ -410,7 +410,7 @@ function mediaLibraryOpened(payload: {
   controlID?: string;
   forImage?: boolean;
   privateUpload?: boolean;
-  value?: string;
+  value?: string | string[];
   replaceIndex?: number;
   allowMultiple?: boolean;
   config?: Map<string, unknown>;

@@ -682,7 +682,7 @@ export type Collections = StaticallyTypedRecord<{ [path: string]: Collection & C
 export interface MediaLibraryInstance {
   show: (args: {
     id?: string;
-    value?: string;
+    value?: string | string[];
     config: StaticallyTypedRecord<{}>;
     allowMultiple?: boolean;
     imagesOnly?: boolean;

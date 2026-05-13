@@ -36,7 +36,7 @@ const IMAGE_EXTENSIONS_VIEWABLE = [
 ];
 const IMAGE_EXTENSIONS = [...IMAGE_EXTENSIONS_VIEWABLE];
 
-class MediaLibrary extends React.Component {
+export class MediaLibrary extends React.Component {
   static propTypes = {
     isVisible: PropTypes.bool,
     loadMediaDisplayURL: PropTypes.func,
@@ -53,6 +53,8 @@ class MediaLibrary extends React.Component {
     isPaginating: PropTypes.bool,
     privateUpload: PropTypes.bool,
     config: ImmutablePropTypes.map,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.arrayOf(PropTypes.string)]),
+    allowMultiple: PropTypes.bool,
     loadMedia: PropTypes.func.isRequired,
     dynamicSearchQuery: PropTypes.string,
     page: PropTypes.number,
@@ -73,6 +75,7 @@ class MediaLibrary extends React.Component {
    */
   state = {
     selectedFile: {},
+    selectedFiles: [],
     query: '',
     isPersisted: false,
   };
@@ -92,12 +95,13 @@ class MediaLibrary extends React.Component {
      */
     const isOpening = !this.props.isVisible && nextProps.isVisible;
     if (isOpening) {
-      this.setState({ selectedFile: {}, query: '' });
+      this.setState({ selectedFile: {}, selectedFiles: [], query: '' });
     }
 
     if (this.state.isPersisted) {
       this.setState({
         selectedFile: nextProps.files[0],
+        selectedFiles: [],
         isPersisted: false,
       });
     }
@@ -113,6 +117,7 @@ class MediaLibrary extends React.Component {
     if (this.state.isPersisted) {
       this.setState({
         selectedFile: this.props.files[0],
+        selectedFiles: [],
         isPersisted: false,
       });
     }
@@ -174,8 +179,26 @@ class MediaLibrary extends React.Component {
    * Toggle asset selection on click.
    */
   handleAssetClick = asset => {
+    if (this.canSelectMultiple()) {
+      const { selectedFiles } = this.state;
+      const isSelected = selectedFiles.some(file => file.key === asset.key);
+      const nextSelectedFiles = isSelected
+        ? selectedFiles.filter(file => file.key !== asset.key)
+        : [...selectedFiles, asset];
+      this.setState({
+        selectedFile: isSelected ? nextSelectedFiles[nextSelectedFiles.length - 1] || {} : asset,
+        selectedFiles: nextSelectedFiles,
+      });
+      return;
+    }
+
     const selectedFile = this.state.selectedFile.key === asset.key ? {} : asset;
-    this.setState({ selectedFile });
+    this.setState({ selectedFile, selectedFiles: [] });
+  };
+
+  canSelectMultiple = () => {
+    const { allowMultiple, value } = this.props;
+    return allowMultiple !== false && Array.isArray(value);
   };
 
   /**
@@ -190,24 +213,52 @@ class MediaLibrary extends React.Component {
     event.persist();
     event.stopPropagation();
     event.preventDefault();
-    const { persistMedia, privateUpload, config, t, field } = this.props;
+    const {
+      persistMedia,
+      insertMedia,
+      privateUpload,
+      config,
+      t,
+      field,
+      value,
+      allowMultiple,
+      canInsert,
+    } = this.props;
     const { files: fileList } = event.dataTransfer || event.target;
     const files = [...fileList];
-    const file = files[0];
-    const maxFileSize = config.get('max_file_size');
+    if (!files.length) {
+      event.target.value = null;
+      return;
+    }
 
-    if (maxFileSize && file.size > maxFileSize) {
+    const canUploadMultiple = allowMultiple !== false && Array.isArray(value);
+    const filesToPersist = canUploadMultiple ? files : files.slice(0, 1);
+    const maxFileSize = config.get('max_file_size');
+    const oversizedFile = filesToPersist.find(file => maxFileSize && file.size > maxFileSize);
+
+    if (oversizedFile) {
       window.alert(
         t('mediaLibrary.mediaLibrary.fileTooLarge', {
           size: Math.floor(maxFileSize / 1000),
         }),
       );
     } else {
-      await persistMedia(file, { privateUpload, field });
+      const persistedPaths = [];
+      for (const file of filesToPersist) {
+        const persisted = await persistMedia(file, { privateUpload, field });
+        const persistedFile = persisted?.payload?.file || persisted?.payload;
+        if (persistedFile?.path) {
+          persistedPaths.push(persistedFile.path);
+        }
+      }
 
-      this.setState({ isPersisted: true });
-
-      this.scrollToTop();
+      if (canUploadMultiple && canInsert && filesToPersist.length > 1 && persistedPaths.length) {
+        insertMedia(persistedPaths, field);
+        this.handleClose();
+      } else {
+        this.setState({ isPersisted: true });
+        this.scrollToTop();
+      }
     }
 
     event.target.value = null;
@@ -218,10 +269,12 @@ class MediaLibrary extends React.Component {
    * editor field that launched the media library can retrieve it.
    */
   handleInsert = () => {
-    const { selectedFile } = this.state;
-    const { path } = selectedFile;
+    const { selectedFile, selectedFiles } = this.state;
     const { insertMedia, field } = this.props;
-    insertMedia(path, field);
+    const paths = this.canSelectMultiple()
+      ? selectedFiles.map(file => file.path)
+      : selectedFile.path;
+    insertMedia(paths, field);
     this.handleClose();
   };
 
@@ -236,7 +289,7 @@ class MediaLibrary extends React.Component {
     }
     const file = files.find(file => selectedFile.key === file.key);
     deleteMedia(file, { privateUpload }).then(() => {
-      this.setState({ selectedFile: {} });
+      this.setState({ selectedFile: {}, selectedFiles: [] });
     });
   };
 
@@ -263,7 +316,7 @@ class MediaLibrary extends React.Component {
     element.click();
 
     document.body.removeChild(element);
-    this.setState({ selectedFile: {} });
+    this.setState({ selectedFile: {}, selectedFiles: [] });
   };
 
   /**
@@ -351,8 +404,10 @@ class MediaLibrary extends React.Component {
         hasNextPage={hasNextPage}
         isPaginating={isPaginating}
         privateUpload={privateUpload}
+        allowMultiple={this.canSelectMultiple()}
         query={this.state.query}
         selectedFile={this.state.selectedFile}
+        selectedFiles={this.state.selectedFiles}
         handleFilter={this.filterImages}
         handleQuery={this.queryFilter}
         toTableData={this.toTableData}
@@ -391,6 +446,8 @@ function mapStateToProps(state) {
     isDeleting: mediaLibrary.get('isDeleting'),
     privateUpload: mediaLibrary.get('privateUpload'),
     config: mediaLibrary.get('config'),
+    value: mediaLibrary.get('value'),
+    allowMultiple: mediaLibrary.get('allowMultiple'),
     page: mediaLibrary.get('page'),
     hasNextPage: mediaLibrary.get('hasNextPage'),
     isPaginating: mediaLibrary.get('isPaginating'),

@@ -32,6 +32,7 @@ function MediaLibraryTop({
   onClose,
   privateUpload,
   forImage,
+  allowMultiple,
   onDownload,
   onUpload,
   query,
@@ -88,6 +89,7 @@ function MediaLibraryTop({
             imagesOnly={forImage}
             onChange={onUpload}
             disabled={!uploadEnabled}
+            multiple={allowMultiple}
           />
         </ButtonsContainer>
       </RowContainer>
@@ -119,6 +121,7 @@ MediaLibraryTop.propTypes = {
   onClose: PropTypes.func.isRequired,
   privateUpload: PropTypes.bool,
   forImage: PropTypes.bool,
+  allowMultiple: PropTypes.bool,
   onDownload: PropTypes.func.isRequired,
   onUpload: PropTypes.func.isRequired,
   query: PropTypes.string,
