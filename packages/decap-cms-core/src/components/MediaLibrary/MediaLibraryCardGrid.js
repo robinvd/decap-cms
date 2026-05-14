@@ -49,7 +49,7 @@ function CardWrapper(props) {
         key={file.key}
         isSelected={isSelectedFile(file)}
         text={file.name}
-        onClick={() => onAssetClick(file)}
+        onClick={event => onAssetClick(file, event, index, mediaItems)}
         isDraft={file.draft}
         draftText={cardDraftText}
         width={cardWidth}
@@ -118,12 +118,12 @@ function PaginatedGrid({
   return (
     <CardGridContainer ref={setScrollContainerRef}>
       <CardGrid>
-        {mediaItems.map(file => (
+        {mediaItems.map((file, index) => (
           <MediaLibraryCard
             key={file.key}
             isSelected={isSelectedFile(file)}
             text={file.name}
-            onClick={() => onAssetClick(file)}
+            onClick={event => onAssetClick(file, event, index, mediaItems)}
             isDraft={file.draft}
             draftText={cardDraftText}
             width={cardWidth}

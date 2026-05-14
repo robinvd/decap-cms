@@ -178,9 +178,31 @@ export class MediaLibrary extends React.Component {
   /**
    * Toggle asset selection on click.
    */
-  handleAssetClick = asset => {
+  handleAssetClick = (asset, event, index, mediaItems) => {
     if (this.canSelectMultiple()) {
-      const { selectedFiles } = this.state;
+      const { selectedFile, selectedFiles } = this.state;
+      const canSelectRange = event?.shiftKey && mediaItems?.length && selectedFile?.key;
+      const anchorIndex = canSelectRange
+        ? mediaItems.findIndex(file => file.key === selectedFile.key)
+        : -1;
+
+      if (anchorIndex >= 0 && index >= 0) {
+        const start = Math.min(anchorIndex, index);
+        const end = Math.max(anchorIndex, index);
+        const rangeFiles = mediaItems.slice(start, end + 1);
+        const selectedKeys = new Set([
+          ...selectedFiles.map(file => file.key),
+          ...rangeFiles.map(file => file.key),
+        ]);
+        const nextSelectedFiles = mediaItems.filter(file => selectedKeys.has(file.key));
+
+        this.setState({
+          selectedFile: asset,
+          selectedFiles: nextSelectedFiles,
+        });
+        return;
+      }
+
       const isSelected = selectedFiles.some(file => file.key === asset.key);
       const nextSelectedFiles = isSelected
         ? selectedFiles.filter(file => file.key !== asset.key)

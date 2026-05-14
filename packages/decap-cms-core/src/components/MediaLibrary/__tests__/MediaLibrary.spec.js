@@ -72,6 +72,25 @@ describe('MediaLibrary', () => {
       });
     });
 
+    it('selects a range of assets when shift-clicking in multiple fields', () => {
+      const { component } = createMediaLibrary();
+      const assets = [
+        { key: 'one', path: 'uploads/one.jpg' },
+        { key: 'two', path: 'uploads/two.jpg' },
+        { key: 'three', path: 'uploads/three.jpg' },
+        { key: 'four', path: 'uploads/four.jpg' },
+      ];
+
+      component.state.selectedFile = assets[0];
+      component.state.selectedFiles = [assets[0]];
+      component.handleAssetClick(assets[3], { shiftKey: true }, 3, assets);
+
+      expect(component.setState).toHaveBeenCalledWith({
+        selectedFile: assets[3],
+        selectedFiles: assets,
+      });
+    });
+
     it('keeps single selection for fields that do not allow multiple values', () => {
       const { component } = createMediaLibrary({ allowMultiple: false, value: '' });
       const asset = { key: 'one', path: 'uploads/one.jpg' };
